@@ -129,7 +129,7 @@ var sfnav = (function() {
         {
 
             clearOutput();
-            addWord('Usage: login as <FirstName> <LastName> OR <Username>');
+            addWord('Usage: login as [FirstName] [LastName] OR [Username]');
             setVisible('visible');
 
         }
@@ -137,7 +137,7 @@ var sfnav = (function() {
         {
 
             clearOutput();
-            addWord('Usage: cf <Object API Name> <Field Name> <Data Type>');
+            addWord('Usage: cf [Object API Name] [Field Name] [Data Type]');
             setVisible('visible');
 
         }
@@ -159,7 +159,7 @@ var sfnav = (function() {
                     words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i]);
                     break;
                     case 'CURRENCY':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <scale> <precision>') ;
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [scale] [precision]') ;
                     break;
                     case 'DATE':
                     words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i]);
@@ -174,22 +174,22 @@ var sfnav = (function() {
 
                     break;
                     case 'GEOLOCATION':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <scale>');
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [scale]');
                     break;
                     case 'HIERARCHICALRELATIONSHIP':
 
                     break;
                     case 'LOOKUP':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <lookup sObjectName>');
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [lookup sObjectName]');
                     break;
                     case 'MASTERDETAIL':
 
                     break;
                     case 'NUMBER':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <scale> <precision>');
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [scale] [precision]');
                     break;
                     case 'PERCENT':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <scale> <precision>');
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [scale] [precision]');
                     break;
                     case 'PHONE':
                     words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i]);
@@ -204,19 +204,19 @@ var sfnav = (function() {
 
                     break;
                     case 'TEXT':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <length>');
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [length]');
                     break;
                     case 'TEXTENCRYPTED':
 
                     break;
                     case 'TEXTAREA':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <length>');
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [length]');
                     break;
                     case 'TEXTAREALONG':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <length> <visible lines>');
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [length] [visible lines]');
                     break;
                     case 'TEXTAREARICH':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <length> <visible lines>');
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [length] [visible lines]');
                     break;
                     case 'URL':
                     words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i]);
@@ -1088,9 +1088,9 @@ var sfnav = (function() {
                 outp.childNodes[posi].classList.add('sfnav_selected');
                 textfield.value = firstChild;
 
-                if(textfield.value.indexOf('<') != -1 && textfield.value.indexOf('>') != -1)
+                if(textfield.value.indexOf('[') != -1 && textfield.value.indexOf(']') != -1)
                 {
-                    textfield.setSelectionRange(textfield.value.indexOf('<'), textfield.value.length);
+                    textfield.setSelectionRange(textfield.value.indexOf('['), textfield.value.length);
                     textfield.focus();
                     return false;
                 }
@@ -1129,9 +1129,9 @@ var sfnav = (function() {
 
             }
 
-            if(textfield.value.indexOf('<') != -1 && textfield.value.indexOf('>') != -1)
+            if(textfield.value.indexOf('[') != -1 && textfield.value.indexOf(']') != -1)
             {
-                textfield.setSelectionRange(textfield.value.indexOf('<'), textfield.value.length);
+                textfield.setSelectionRange(textfield.value.indexOf('['), textfield.value.length);
                 textfield.focus();
                 return false;
             }
