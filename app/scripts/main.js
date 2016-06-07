@@ -295,9 +295,28 @@ var sfnav = (function() {
     }
     function setVisibleSearch(visi)
     {
-        var t = document.getElementById("sfnav_search_box");
-        t.style.visibility = visi;
-        if(visi=='visible') document.getElementById("sfnav_quickSearch").focus();
+        document.getElementById("sfnav_search_box").style.visibility = visi;
+        document.getElementById("sfnav_search_box_background").style.visibility = visi;
+
+        if(visi=='visible') {
+            document.getElementById("sfnav_quickSearch").focus();
+            document.body.style.overflow = 'hidden'; // Hide scroll bars
+        } else {
+            document.body.style.overflow = 'auto'; // Show scroll bars
+        }
+    }
+
+    function hideAll() {
+        if (isVisible() || isVisibleSearch()) {
+
+            document.getElementById("sfnav_quickSearch").blur();
+            clearOutput();
+            document.getElementById("sfnav_quickSearch").value = '';
+
+            setVisible("hidden");
+            setVisibleSearch("hidden");
+
+        }
     }
 
     function lookAt(){
@@ -997,18 +1016,7 @@ var sfnav = (function() {
         });
 
         Mousetrap.bindGlobal('esc', function(e) {
-
-            if (isVisible() || isVisibleSearch()) {
-
-                document.getElementById("sfnav_quickSearch").blur();
-                clearOutput();
-                document.getElementById("sfnav_quickSearch").value = '';
-
-                setVisible("hidden");
-                setVisibleSearch("hidden");
-
-            }
-
+            hideAll();
         });
 
         Mousetrap.wrap(document.getElementById('sfnav_quickSearch')).bind('enter', kbdCommand);
@@ -1141,6 +1149,11 @@ var sfnav = (function() {
         var logoURL = chrome.extension.getURL("images/128.png");
         div.innerHTML = '<div class="sfnav_wrapper"><input type="text" id="sfnav_quickSearch" autocomplete="off"/><img id="sfnav_loader" src= "'+ loaderURL +'"/><img id="sfnav_logo" src= "'+ logoURL +'"/></div><div class="sfnav_shadow" id="sfnav_shadow"/><div class="sfnav_output" id="sfnav_output"/>';
         document.body.appendChild(div);
+
+        var background_div = document.createElement('div');
+        background_div.setAttribute('id', 'sfnav_search_box_background');
+        background_div.addEventListener('click', hideAll);
+        document.body.appendChild(background_div);
 
         outp = document.getElementById("sfnav_output");
         hideLoadingIndicator();
