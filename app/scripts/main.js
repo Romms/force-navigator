@@ -1147,7 +1147,7 @@ var sfnav = (function() {
         div.setAttribute('id', 'sfnav_search_box');
         var loaderURL = chrome.extension.getURL("images/ajax-loader.gif");
         var logoURL = chrome.extension.getURL("images/128.png");
-        div.innerHTML = '<div class="sfnav_wrapper"><input type="text" id="sfnav_quickSearch" autocomplete="off"/><img id="sfnav_loader" src= "'+ loaderURL +'"/><img id="sfnav_logo" src= "'+ logoURL +'"/></div><div class="sfnav_shadow" id="sfnav_shadow"/><div class="sfnav_output" id="sfnav_output"/>';
+        div.innerHTML = '<div class="sfnav_wrapper"><input type="text" id="sfnav_quickSearch" autocomplete="off" placeholder="Search..."/><img id="sfnav_loader" src= "'+ loaderURL +'"/><img id="sfnav_logo" src= "'+ logoURL +'"/></div><div class="sfnav_shadow" id="sfnav_shadow"/><div class="sfnav_output" id="sfnav_output"/>';
         document.body.appendChild(div);
 
         var background_div = document.createElement('div');
