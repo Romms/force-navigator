@@ -9,9 +9,9 @@
  	-webkit-border-radius:5px;
  	top:20%;
  	left:20%;
+ 	right:20%;
  	position:fixed;
  	padding:9px;
- 	width:50%;
  	visibility: hidden;
     box-shadow: rgba(0, 0, 0, 0.490196) 0px 6px 20px 0px;
     border-top-left-radius: 2px;
@@ -41,7 +41,7 @@
   display: flex;
  }
   #sfnav_search_box .sfnav_output {
-    max-height:240px;
+    max-height:350px;
  	overflow:auto;
  }
  .sfnav_shadow {
