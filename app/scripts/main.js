@@ -100,13 +100,13 @@ var sfnav = (function() {
 
     var mouseClick=
     function(){
-        document.getElementById("sfnav_quickSearch").value = this.firstChild.nodeValue;
+        document.getElementById("sfnav_quickSearch").value = getContent(this);
         setVisible("hidden");
         posi = -1;
-        oldins = this.firstChild.nodeValue;
+        oldins = getContent(this);
         setVisibleSearch("hidden");
         setVisible("hidden");
-        invokeCommand(this.firstChild.nodeValue,false,'click');
+        invokeCommand(getContent(this), false, 'click');
         return true;
     }
 
@@ -350,7 +350,7 @@ var sfnav = (function() {
     		}
 
         sp.className=  "sfnav_child";
-        sp.appendChild(document.createTextNode(word));
+        sp.innerHTML = word;
         sp.onmouseover = mouseHandler;
         sp.onmouseout = mouseHandlerOut;
         sp.onclick = mouseClick;
@@ -962,6 +962,32 @@ var sfnav = (function() {
         return returnUrl;
     }
 
+    function getContent(elem) {
+        var content = undefined;
+
+        if ("undefined" !== typeof(elem.innerHTML)) {
+            content = elem.innerHTML;
+        } else
+        if ("undefined" !== typeof(elem.nodeValue)) {
+            content = elem.nodeValue;
+        } else
+        if ("string" === typeof(elem)) {
+            content = elem;
+        }
+
+        if (undefined !== content) {
+            // Remove tags
+            content = content.replace(/<(?:.|\n)*?>/gm, '');
+
+            // HTML decode
+            var txt = document.createElement("textarea");
+            txt.innerHTML = content;
+            return txt.value;
+        }
+
+        return content;
+    }
+
     function initShortcuts() {
 
       chrome.extension.sendMessage({'action':'Get Settings'},
@@ -993,7 +1019,7 @@ var sfnav = (function() {
         origText = document.getElementById("sfnav_quickSearch").value;
         if(typeof outp.childNodes[position] != 'undefined')
         {
-            newText = outp.childNodes[position].firstChild.nodeValue;
+            newText = getContent(outp.childNodes[position]);
 
         }
 
@@ -1030,7 +1056,7 @@ var sfnav = (function() {
             lookAt();
 
             if(outp.childNodes[posi] != null)
-                firstChild = outp.childNodes[posi].firstChild.nodeValue;
+                firstChild = getContent(outp.childNodes[posi]);
             else
                 firstChild = null;
 
@@ -1044,7 +1070,7 @@ var sfnav = (function() {
 
                 if (outp.childNodes[posi] != null) {
                     outp.childNodes[posi].scrollIntoViewIfNeeded(false);
-                    firstChild = outp.childNodes[posi].firstChild.nodeValue;
+                    firstChild = getContent(outp.childNodes[posi]);
                 } else {
                     firstChild = null;
                 }
@@ -1071,7 +1097,7 @@ var sfnav = (function() {
         var firstChild;
 
         if(outp.childNodes[posi] != null)
-            firstChild = outp.childNodes[posi].firstChild.nodeValue;
+            firstChild = getContent(outp.childNodes[posi]);
         else
             firstChild = null;
 
@@ -1082,7 +1108,7 @@ var sfnav = (function() {
 
             if(outp.childNodes[posi] != null) {
                 outp.childNodes[posi].scrollIntoViewIfNeeded(false);
-                firstChild = outp.childNodes[posi].firstChild.nodeValue;
+                firstChild = getContent(outp.childNodes[posi]);
             } else {
                 firstChild = null;
             }
