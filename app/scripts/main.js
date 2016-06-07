@@ -251,7 +251,7 @@ var sfnav = (function() {
         else
         {
             words = getWord(ins, cmds);
-
+            words.sort();
             if (words.length > 0){
                 clearOutput();
                 for (var i=0;i<words.length; ++i) addWord (words[i]);
