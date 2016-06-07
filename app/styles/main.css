@@ -94,3 +94,13 @@
   margin-bottom: auto;
 }
 
+.sfnav_splitter::before {
+    padding: 0 2px;
+    content: ' ❯ ';
+    color: rgba(11, 151, 196, 0.77);
+    font-size: 16px;
+    font-weight:100;
+}
+.sfnav_splitter {
+    font-size: 0;
+}

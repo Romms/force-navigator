@@ -254,7 +254,12 @@ var sfnav = (function() {
             words.sort();
             if (words.length > 0){
                 clearOutput();
-                for (var i=0;i<words.length; ++i) addWord (words[i]);
+                for (var i=0;i<words.length; ++i) {
+                    var word_tmp = words[i];
+                    word_tmp = word_tmp.replace(/ > /g, '<span class="sfnav_splitter"> &gt; </span>')
+
+                    addWord(word_tmp);
+                }
                     setVisible("visible");
                 input = document.getElementById("sfnav_quickSearch").value;
             }
