@@ -1039,15 +1039,24 @@ var sfnav = (function() {
             if (words.length > 0 && posi < words.length-1)
             {
                 posi++;
+
                 if(posi == 0) posi = 1;
-                if(outp.childNodes[posi] != null)
+
+                if (outp.childNodes[posi] != null) {
+                    outp.childNodes[posi].scrollIntoViewIfNeeded(false);
                     firstChild = outp.childNodes[posi].firstChild.nodeValue;
-                else
+                } else {
                     firstChild = null;
-                if (posi >=1) outp.childNodes[posi-1].classList.remove('sfnav_selected');
-                else input = textfield.value;
+                }
+
+                if (posi >=1)
+                    outp.childNodes[posi-1].classList.remove('sfnav_selected');
+                else
+                    input = textfield.value;
+
                 outp.childNodes[posi].classList.add('sfnav_selected');
                 textfield.value = firstChild;
+
                 if(textfield.value.indexOf('<') != -1 && textfield.value.indexOf('>') != -1)
                 {
                     textfield.setSelectionRange(textfield.value.indexOf('<'), textfield.value.length);
@@ -1070,10 +1079,14 @@ var sfnav = (function() {
 
         if (words.length > 0 && posi >= 0){
             posi--;
-            if(outp.childNodes[posi] != null)
+
+            if(outp.childNodes[posi] != null) {
+                outp.childNodes[posi].scrollIntoViewIfNeeded(false);
                 firstChild = outp.childNodes[posi].firstChild.nodeValue;
-            else
+            } else {
                 firstChild = null;
+            }
+
             if (posi >=0){
                 outp.childNodes[posi+1].classList.remove('sfnav_selected');
                 outp.childNodes[posi].classList.add('sfnav_selected');
@@ -1084,6 +1097,7 @@ var sfnav = (function() {
                 textfield.value = input;
 
             }
+
             if(textfield.value.indexOf('<') != -1 && textfield.value.indexOf('>') != -1)
             {
                 textfield.setSelectionRange(textfield.value.indexOf('<'), textfield.value.length);
@@ -1195,6 +1209,37 @@ var sfnav = (function() {
 
 
 
+    }
+
+    /*
+     * Code taken from https://gist.github.com/hsablonniere/2581101#file-index-js
+     */
+    if (!Element.prototype.scrollIntoViewIfNeeded) {
+        Element.prototype.scrollIntoViewIfNeeded = function (centerIfNeeded) {
+            centerIfNeeded = arguments.length === 0 ? true : !!centerIfNeeded;
+
+            var parent = this.parentNode,
+                parentComputedStyle = window.getComputedStyle(parent, null),
+                parentBorderTopWidth = parseInt(parentComputedStyle.getPropertyValue('border-top-width')),
+                parentBorderLeftWidth = parseInt(parentComputedStyle.getPropertyValue('border-left-width')),
+                overTop = this.offsetTop - parent.offsetTop < parent.scrollTop,
+                overBottom = (this.offsetTop - parent.offsetTop + this.clientHeight - parentBorderTopWidth) > (parent.scrollTop + parent.clientHeight),
+                overLeft = this.offsetLeft - parent.offsetLeft < parent.scrollLeft,
+                overRight = (this.offsetLeft - parent.offsetLeft + this.clientWidth - parentBorderLeftWidth) > (parent.scrollLeft + parent.clientWidth),
+                alignWithTop = overTop && !overBottom;
+
+            if ((overTop || overBottom) && centerIfNeeded) {
+                parent.scrollTop = this.offsetTop - parent.offsetTop - parent.clientHeight / 2 - parentBorderTopWidth + this.clientHeight / 2;
+            }
+
+            if ((overLeft || overRight) && centerIfNeeded) {
+                parent.scrollLeft = this.offsetLeft - parent.offsetLeft - parent.clientWidth / 2 - parentBorderLeftWidth + this.clientWidth / 2;
+            }
+
+            if ((overTop || overBottom || overLeft || overRight) && !centerIfNeeded) {
+                this.scrollIntoView(alignWithTop);
+            }
+        };
     }
 
     if(serverInstance == null || getCookie('sid') == null || getCookie('sid').split('!').length != 2) return;
