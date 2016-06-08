@@ -104,3 +104,6 @@
 .sfnav_splitter {
     font-size: 0;
 }
+ #sfnav_output .highlighted {
+     background-color: #ffff60;
+ }
