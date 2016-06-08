@@ -100,13 +100,13 @@ var sfnav = (function() {
 
     var mouseClick=
     function(){
-        document.getElementById("sfnav_quickSearch").value = this.firstChild.nodeValue;
+        document.getElementById("sfnav_quickSearch").value = getContent(this);
         setVisible("hidden");
         posi = -1;
-        oldins = this.firstChild.nodeValue;
+        oldins = getContent(this);
         setVisibleSearch("hidden");
         setVisible("hidden");
-        invokeCommand(this.firstChild.nodeValue,false,'click');
+        invokeCommand(getContent(this), false, 'click');
         return true;
     }
 
@@ -129,7 +129,7 @@ var sfnav = (function() {
         {
 
             clearOutput();
-            addWord('Usage: login as <FirstName> <LastName> OR <Username>');
+            addWord('Usage: login as [FirstName] [LastName] OR [Username]');
             setVisible('visible');
 
         }
@@ -137,7 +137,7 @@ var sfnav = (function() {
         {
 
             clearOutput();
-            addWord('Usage: cf <Object API Name> <Field Name> <Data Type>');
+            addWord('Usage: cf [Object API Name] [Field Name] [Data Type]');
             setVisible('visible');
 
         }
@@ -159,7 +159,7 @@ var sfnav = (function() {
                     words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i]);
                     break;
                     case 'CURRENCY':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <scale> <precision>') ;
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [scale] [precision]') ;
                     break;
                     case 'DATE':
                     words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i]);
@@ -174,22 +174,22 @@ var sfnav = (function() {
 
                     break;
                     case 'GEOLOCATION':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <scale>');
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [scale]');
                     break;
                     case 'HIERARCHICALRELATIONSHIP':
 
                     break;
                     case 'LOOKUP':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <lookup sObjectName>');
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [lookup sObjectName]');
                     break;
                     case 'MASTERDETAIL':
 
                     break;
                     case 'NUMBER':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <scale> <precision>');
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [scale] [precision]');
                     break;
                     case 'PERCENT':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <scale> <precision>');
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [scale] [precision]');
                     break;
                     case 'PHONE':
                     words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i]);
@@ -204,19 +204,19 @@ var sfnav = (function() {
 
                     break;
                     case 'TEXT':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <length>');
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [length]');
                     break;
                     case 'TEXTENCRYPTED':
 
                     break;
                     case 'TEXTAREA':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <length>');
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [length]');
                     break;
                     case 'TEXTAREALONG':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <length> <visible lines>');
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [length] [visible lines]');
                     break;
                     case 'TEXTAREARICH':
-                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' <length> <visible lines>');
+                    words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i] + ' [length] [visible lines]');
                     break;
                     case 'URL':
                     words2.push(wordArray[0] + ' ' + wordArray[1] + ' ' + wordArray[2] + ' ' + words[i]);
@@ -251,10 +251,15 @@ var sfnav = (function() {
         else
         {
             words = getWord(ins, cmds);
-
+            // words.sort();
             if (words.length > 0){
                 clearOutput();
-                for (var i=0;i<words.length; ++i) addWord (words[i]);
+                for (var i=0;i<words.length; ++i) {
+                    var word_tmp = words[i];
+                    word_tmp = word_tmp.replace(/ > /g, '<span class="sfnav_splitter"> &gt; </span>')
+
+                    addWord(word_tmp);
+                }
                     setVisible("visible");
                 input = document.getElementById("sfnav_quickSearch").value;
             }
@@ -350,7 +355,7 @@ var sfnav = (function() {
     		}
 
         sp.className=  "sfnav_child";
-        sp.appendChild(document.createTextNode(word));
+        sp.innerHTML = word;
         sp.onmouseover = mouseHandler;
         sp.onmouseout = mouseHandlerOut;
         sp.onclick = mouseClick;
@@ -412,50 +417,133 @@ var sfnav = (function() {
         posi = -1;
     }
     function getWord(beginning, dict){
+        beginning = beginning.trim().toLowerCase();
+
         var words = [];
         if(typeof beginning === 'undefined') return [];
 
-        var tmpSplit = beginning.split(' ');
-        var match = false;
         if(beginning.length == 0)
         {
             for (var key in dict)
                words.push(key);
-           return words;
-       }
-       var arrFound = [];
-       for (var key in dict)
-       {
-        match = false;
-        if(key.toLowerCase().indexOf(beginning) != -1)
-        {
-            arrFound.push({num : 10,key : key});
+            return words;
         }
-        else
-        {
-            for(var i = 0;i<tmpSplit.length;i++)
-            {
 
-                if(key.toLowerCase().indexOf(tmpSplit[i].toLowerCase()) != -1)
+        var tmpSplit = beginning.split(' ');
+        for(var i = 0; i < tmpSplit.length; i++){
+            tmpSplit[i] = tmpSplit[i].trim();
+            if(0 === tmpSplit[i].length){
+                tmpSplit.splice(i,1);
+                i--;
+            }
+        }
+
+        var arrFound = [];
+        for (var key in dict)
+        {
+            var key_lowercase = key.toLowerCase();
+            var highlighting = [];
+
+            var match = false;
+            var num = 0;
+
+            var indexFound = key_lowercase.indexOf(beginning);
+            if(indexFound != -1)
+            {
+                match = true;
+                num = 100;
+
+                highlighting.push({
+                    from: indexFound,
+                    to: indexFound + beginning.length,
+                });
+            }
+            else
+            {
+                num = 0;
+                for(var i = 0; i < tmpSplit.length; i++)
                 {
-                    match = true;
-                }
-                else
-                {
-                    match = false;
-                    break;
+                    indexFound = key_lowercase.indexOf(tmpSplit[i]);
+                    if (indexFound != -1) {
+                        match = true;
+                        num += 1;
+
+                        highlighting.push({
+                            from: indexFound,
+                            to: indexFound + tmpSplit[i].length,
+                        });
+                    } else {
+                        match = false;
+                        break;
+                    }
                 }
             }
-            if(match) arrFound.push({num : 1, key : key});
-        }
-    }
-    arrFound.sort(function(a,b) {
-        return b.num - a.num;
-    });
-    for(var i = 0;i<arrFound.length;i++)
-        words[words.length] = arrFound[i].key;
 
-    return words;
+            if(match) {
+                highlighting.sort(function (a,b) {
+                    return a.from - b.from;
+                });
+
+                for (var i = 0; i < highlighting.length - 1; i++) {
+                    if (highlighting[i].to >= highlighting[i+1].to) { // Next are included
+                        highlighting.splice(i+1, 1);
+                        i--;
+                    } else {
+                        if (highlighting[i].to >= highlighting[i + 1].from) { // Join
+                            highlighting[i].to = highlighting[i + 1].to;
+
+                            highlighting.splice(i + 1, 1);
+                            i--;
+                        }
+                    }
+                }
+
+                var highlighted_key = key;
+                var length_diff = 0;
+
+                for (var i = 0; i < highlighting.length; i++) {
+                    var length_before = highlighted_key.length;
+
+                    var from = length_diff + highlighting[i].from;
+                    var to   = length_diff + highlighting[i].to;
+
+                    var begin = highlighted_key.substring(0, from);
+                    var middle = highlighted_key.substring(from, to);
+                    var end = highlighted_key.substring(to);
+
+                    middle = '<span class="highlighted">' + middle + '</span>';
+
+                    highlighted_key = begin.concat(middle, end);
+
+                    length_diff += highlighted_key.length - length_before;
+                }
+
+                // console.log(highlighting);
+                // console.log(highlighted_key);
+
+                arrFound.push({
+                    num: num,
+                    key: highlighted_key,
+                });
+            }
+
+        }
+        arrFound.sort(function(a,b) {
+            var diff = b.num - a.num;
+            if(diff === 0){
+                if(b.key < a.key) {
+                    diff = b.key == a.key? 0 : -1;
+                } else {
+                    diff = 1;
+                }
+            }
+
+            return diff;
+        });
+        for(var i = 0;i<arrFound.length;i++)
+            words[words.length] = arrFound[i].key;
+
+        return words;
     }
     function setColor (_posi, _color, _forg){
         outp.childNodes[_posi].style.background = _color;
@@ -787,13 +875,13 @@ var sfnav = (function() {
                 act.keyPrefix = metadata.sobjects[i].keyPrefix;
                 act.url = serverInstance + '/' + metadata.sobjects[i].keyPrefix;
 
-                cmds['List ' + mRecord.labelPlural] = act;
+                cmds['List > ' + mRecord.labelPlural] = act;
                 act = {};
                 act.key = metadata.sobjects[i].name;
                 act.keyPrefix = metadata.sobjects[i].keyPrefix;
                 act.url = serverInstance + '/' + metadata.sobjects[i].keyPrefix;
                 act.url += '/e';
-                cmds['New ' + mRecord.label] = act;
+                cmds['New > ' + mRecord.label] = act;
 
 
             }
@@ -962,6 +1050,32 @@ var sfnav = (function() {
         return returnUrl;
     }
 
+    function getContent(elem) {
+        var content = undefined;
+
+        if ("undefined" !== typeof(elem.innerHTML)) {
+            content = elem.innerHTML;
+        } else
+        if ("undefined" !== typeof(elem.nodeValue)) {
+            content = elem.nodeValue;
+        } else
+        if ("string" === typeof(elem)) {
+            content = elem;
+        }
+
+        if (undefined !== content) {
+            // Remove tags
+            content = content.replace(/<(?:.|\n)*?>/gm, '');
+
+            // HTML decode
+            var txt = document.createElement("textarea");
+            txt.innerHTML = content;
+            return txt.value;
+        }
+
+        return content;
+    }
+
     function initShortcuts() {
 
       chrome.extension.sendMessage({'action':'Get Settings'},
@@ -993,7 +1107,7 @@ var sfnav = (function() {
         origText = document.getElementById("sfnav_quickSearch").value;
         if(typeof outp.childNodes[position] != 'undefined')
         {
-            newText = outp.childNodes[position].firstChild.nodeValue;
+            newText = getContent(outp.childNodes[position]);
 
         }
 
@@ -1030,7 +1144,7 @@ var sfnav = (function() {
             lookAt();
 
             if(outp.childNodes[posi] != null)
-                firstChild = outp.childNodes[posi].firstChild.nodeValue;
+                firstChild = getContent(outp.childNodes[posi]);
             else
                 firstChild = null;
 
@@ -1044,7 +1158,7 @@ var sfnav = (function() {
 
                 if (outp.childNodes[posi] != null) {
                     outp.childNodes[posi].scrollIntoViewIfNeeded(false);
-                    firstChild = outp.childNodes[posi].firstChild.nodeValue;
+                    firstChild = getContent(outp.childNodes[posi]);
                 } else {
                     firstChild = null;
                 }
@@ -1057,9 +1171,9 @@ var sfnav = (function() {
                 outp.childNodes[posi].classList.add('sfnav_selected');
                 textfield.value = firstChild;
 
-                if(textfield.value.indexOf('<') != -1 && textfield.value.indexOf('>') != -1)
+                if(textfield.value.indexOf('[') != -1 && textfield.value.indexOf(']') != -1)
                 {
-                    textfield.setSelectionRange(textfield.value.indexOf('<'), textfield.value.length);
+                    textfield.setSelectionRange(textfield.value.indexOf('['), textfield.value.length);
                     textfield.focus();
                     return false;
                 }
@@ -1071,7 +1185,7 @@ var sfnav = (function() {
         var firstChild;
 
         if(outp.childNodes[posi] != null)
-            firstChild = outp.childNodes[posi].firstChild.nodeValue;
+            firstChild = getContent(outp.childNodes[posi]);
         else
             firstChild = null;
 
@@ -1082,7 +1196,7 @@ var sfnav = (function() {
 
             if(outp.childNodes[posi] != null) {
                 outp.childNodes[posi].scrollIntoViewIfNeeded(false);
-                firstChild = outp.childNodes[posi].firstChild.nodeValue;
+                firstChild = getContent(outp.childNodes[posi]);
             } else {
                 firstChild = null;
             }
@@ -1098,9 +1212,9 @@ var sfnav = (function() {
 
             }
 
-            if(textfield.value.indexOf('<') != -1 && textfield.value.indexOf('>') != -1)
+            if(textfield.value.indexOf('[') != -1 && textfield.value.indexOf(']') != -1)
             {
-                textfield.setSelectionRange(textfield.value.indexOf('<'), textfield.value.length);
+                textfield.setSelectionRange(textfield.value.indexOf('['), textfield.value.length);
                 textfield.focus();
                 return false;
             }
