@@ -417,7 +417,7 @@ var sfnav = (function() {
         posi = -1;
     }
     function getWord(beginning, dict){
-        beginning = beginning.toLowerCase();
+        beginning = beginning.trim().toLowerCase();
 
         var words = [];
         if(typeof beginning === 'undefined') return [];
@@ -875,13 +875,13 @@ var sfnav = (function() {
                 act.keyPrefix = metadata.sobjects[i].keyPrefix;
                 act.url = serverInstance + '/' + metadata.sobjects[i].keyPrefix;
 
-                cmds['List ' + mRecord.labelPlural] = act;
+                cmds['List > ' + mRecord.labelPlural] = act;
                 act = {};
                 act.key = metadata.sobjects[i].name;
                 act.keyPrefix = metadata.sobjects[i].keyPrefix;
                 act.url = serverInstance + '/' + metadata.sobjects[i].keyPrefix;
                 act.url += '/e';
-                cmds['New ' + mRecord.label] = act;
+                cmds['New > ' + mRecord.label] = act;
 
 
             }
