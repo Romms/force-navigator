@@ -2,27 +2,13 @@
 // http://silverlinecrm.com
 
 var sfnav = (function() {
-    var outp;
-    var oldins;
-    var posi = -1;
-    var newTabKeys = [
+    var NEW_TAB_KEYS = [
         "ctrl+enter",
         "command+enter",
         "shift+enter"
-    ]
-    var input;
-    var key;
-    var metaData = {};
-    var serverInstance = getServerInstance();
-    var cmds = {};
-    var isCtrl = false;
-    var clientId, omnomnom, hash;
-    var loaded=false;
-    var shortcut;
-    var sid;
+    ];
+    var SERVER_INSTANCE = getServerInstance();
     var SFAPI_VERSION = 'v33.0';
-    var ftClient;
-    var customObjects = {};
     var META_DATATYPES = {
         "AUTONUMBER": {name:"AutoNumber",code:"auto", params:0},
         "CHECKBOX": {name:"Checkbox",code:"cb", params:0},
@@ -48,6 +34,18 @@ var sfnav = (function() {
         "TEXTAREARICH": {name:"Html",code:"tar"},
         "URL": {name:"Url",code:"url"}
     };
+
+
+    var resultsElement;
+    var oldins = undefined;
+    var selectedItemIndex = -1;
+    var allComandsList = {};
+    var hash;
+    var sid;
+    var forceToolingClient;
+    var customObjects = {};
+    var words = [];
+
 
 /**
  * adds a bindGlobal method to Mousetrap that allows you to
@@ -85,68 +83,67 @@ var sfnav = (function() {
         return Mousetrap;
     }) (Mousetrap);
 
-     var mouseHandler=
-     function(){
-        this.classList.add('sfnav_selected');
-		mouseClickLoginAsUserId = this.getAttribute("id");
-        return true;
-    }
-
-    var mouseHandlerOut=
-    function(){
-        this.classList.remove('sfnav_selected');
-        return true;
-    }
-
     var mouseClick=
     function(){
-        document.getElementById("sfnav_quickSearch").value = getContent(this);
-        setVisible("hidden");
-        posi = -1;
-        oldins = getContent(this);
-        setVisibleSearch("hidden");
-        setVisible("hidden");
-        invokeCommand(getContent(this), false, 'click');
-        return true;
-    }
+        console.log('AAAAAAAAAAAA');
+        console.log(getContent(this));
 
-	var mouseClickLoginAsUserId;
+        oldins = getContent(this);
+        movingTo(-1);
+        hideResults();
+        hideAll();
+
+        invokeCommand(getContent(this), false, 'click');
+
+        return true;
+    };
+
 	var mouseClickLoginAs=
     function(){
+        var mouseClickLoginAsUserId = $(this).attr('id');
         loginAsPerform(mouseClickLoginAsUserId);
         return true;
-    }
+    };
 
     function getSingleObjectMetadata()
     {
         var recordId = document.URL.split('/')[3];
         var keyPrefix = recordId.substring(0,3);
-
     }
-    function addElements(ins)
+
+    function lookAt() {
+        var ins = document.getElementById("sfnav_quickSearch").value;
+        if (oldins != ins) {
+            if (selectedItemIndex == -1) {
+                oldins = ins;
+                search(ins);
+            }
+        }
+    }
+
+    function search(ins)
     {
-		if(ins.substring(0,9) == 'login as ')
-        {
+        clearResults();
+        console.log(ins);
+        ins = ins.trim();
 
-            clearOutput();
-            addWord('Usage: login as [FirstName] [LastName] OR [Username]');
-            setVisible('visible');
-
+        if (0 === ins.length) {
+            return;
         }
-		else if(ins.substring(0,3) == 'cf ' && ins.split(' ').length < 4)
-        {
 
-            clearOutput();
-            addWord('Usage: cf [Object API Name] [Field Name] [Data Type]');
-            setVisible('visible');
-
+		if (ins.toLowerCase().substring(0,8) == 'login as') {
+            addResultItem('Login As [FirstName] [LastName] OR [Username]');
+            loginAsShowResults(ins);
         }
-        else if(ins.substring(0,3) == 'cf ' && ins.split(' ').length == 4)
-        {
-            clearOutput();
+
+        if(ins.toLowerCase().substring(0,3) == 'cf ' && ins.split(' ').length < 4) {
+            addResultItem('Usage: cf [Object API Name] [Field Name] [Data Type]');
+        }
+
+        if(ins.toLowerCase().substring(0,3) == 'cf ' && ins.split(' ').length == 4) {
             var wordArray = ins.split(' ');
 
-            words = getWord(wordArray[3], META_DATATYPES);
+            var words = getWord(wordArray[3], META_DATATYPES);
             var words2 = [];
             for(var i = 0; i<words.length; i++)
             {
@@ -223,165 +220,119 @@ var sfnav = (function() {
                     break;
 
                 }
-
-
             }
             if (words2.length > 0){
-                clearOutput();
-                for (var i=0;i<words2.length; ++i) addWord (words2[i]);
-                    setVisible("visible");
-                input = document.getElementById("sfnav_quickSearch").value;
+                for (var i=0; i<words2.length; i++) {
+                    addResultItem (words2[i]);
+                }
             }
-            else{
-                setVisible("hidden");
-                posi = -1;
-            }
-            /*
-            for(var i=0;i<Object.keys(META_DATATYPES).length;i++)
-            {
-                addWord(Object.keys(META_DATATYPES)[i]);
-            }
-            */
-            setVisible('visible');
+
         }
-        else if(ins.substring(0,3) == 'cf ' && ins.split(' ').length > 4)
-        {
-            clearOutput();
+        if(ins.toLowerCase().substring(0,3) == 'cf ' && ins.split(' ').length > 4) {
+
         }
-        else
+
         {
-            words = getWord(ins, cmds);
-            // words.sort();
+            var words = getWord(ins, allComandsList);
             if (words.length > 0){
-                clearOutput();
                 for (var i=0;i<words.length; ++i) {
                     var word_tmp = words[i];
-                    word_tmp = word_tmp.replace(/ > /g, '<span class="sfnav_splitter"> &gt; </span>')
+                    word_tmp = word_tmp.replace(/ > /g, '<span class="sfnav_splitter"> &gt; </span>');
 
-                    addWord(word_tmp);
+                    addResultItem(word_tmp);
                 }
-                    setVisible("visible");
-                input = document.getElementById("sfnav_quickSearch").value;
-            }
-            else{
-                clearOutput();
-                setVisible("hidden");
-                posi = -1;
             }
         }
-        var firstEl = document.querySelector('#sfnav_output :first-child');
 
-        if(posi == -1 && firstEl != null) firstEl.className = "sfnav_child sfnav_selected"
+        movingTo(-1);
+        showResults();
     }
 
     function httpGet(url, callback)
     {
-     var req = new XMLHttpRequest();
-     req.open("GET", url, true);
-     req.setRequestHeader("Authorization", sid);
-     req.onload = function(response) {
-         callback(response);
-     }
-     req.send();
-    }
-    function getVisible(){
-        return document.getElementById("sfnav_shadow").style.visibility;
-    }
-    function isVisible() {
-        return document.getElementById("sfnav_shadow").style.visibility !== 'hidden';
-    }
-    function setVisible(visi){
-        var x = document.getElementById("sfnav_shadow");
-        x.style.position = 'relative';
-        x.style.visibility = visi;
-    }
-    function isVisibleSearch() {
-        return document.getElementById("sfnav_quickSearch").style.visibility !== 'hidden';
-    }
-    function setVisibleSearch(visi)
-    {
-        document.getElementById("sfnav_search_box").style.visibility = visi;
-        document.getElementById("sfnav_search_box_background").style.visibility = visi;
-
-        if(visi=='visible') {
-            document.getElementById("sfnav_quickSearch").focus();
-            document.body.style.overflow = 'hidden'; // Hide scroll bars
-        } else {
-            document.body.style.overflow = 'auto'; // Show scroll bars
+        var req = new XMLHttpRequest();
+        req.open("GET", url, true);
+        req.setRequestHeader("Authorization", sid);
+        req.onload = function(response) {
+            callback(response);
         }
+        req.send();
+    }
+
+    function hideResults(){
+        document.getElementById("sfnav_results").style.visibility = 'hidden';
+        movingTo(-1);
+    }
+    function showResults(){
+        document.getElementById("sfnav_results").style.visibility = 'visible';
     }
 
     function hideAll() {
-        if (isVisible() || isVisibleSearch()) {
+        document.getElementById("sfnav_quickSearch").blur();
+        document.getElementById("sfnav_quickSearch").value = '';
+        hideResults();
+        clearResults();
 
-            document.getElementById("sfnav_quickSearch").blur();
-            clearOutput();
-            document.getElementById("sfnav_quickSearch").value = '';
-
-            setVisible("hidden");
-            setVisibleSearch("hidden");
-
-        }
+        document.getElementById("sfnav_search_box").style.visibility = 'hidden';
+        document.getElementById("sfnav_search_box_background").style.visibility = 'hidden';
+        document.body.style.overflow = 'auto'; // Show scroll bars
     }
 
-    function lookAt(){
-        var ins = document.getElementById("sfnav_quickSearch").value;
+    function showAll() {
+        document.getElementById("sfnav_search_box").style.visibility = 'visible';
+        document.getElementById("sfnav_search_box_background").style.visibility = 'visible';
+        showResults();
 
-        if (oldins == ins && ins.length > 0) return;
-        else if (posi > -1);
-        else if (ins.length > 0){
-            addElements(ins);
-        }
-        else{
-            document.querySelector('#sfnav_output').innerHTML = '';
-            setVisible("hidden");
-            posi = -1;
-        }
-        oldins = ins;
+        document.getElementById("sfnav_quickSearch").focus();
+        document.body.style.overflow = 'hidden'; // Hide scroll bars
     }
-    function addWord(word){
+
+    function addResultItem(word){
+
         var d = document.createElement("div");
         var sp;
-        if(cmds[word] != null && cmds[word].url != null && cmds[word].url != "") {
+        if(allComandsList[word] != null && allComandsList[word].url != null && allComandsList[word].url != "") {
             sp = document.createElement("a");
-            sp.setAttribute("href", cmds[word].url);
+            sp.setAttribute("href", allComandsList[word].url);
 
         } else {
             sp = d;
         }
 
-    		if(cmds[word] != null && cmds[word].id != null && cmds[word].id != "") {
-    			sp.id = cmds[word].id;
-    		}
+        if(allComandsList[word] != null && allComandsList[word].id != null && allComandsList[word].id != "") {
+            sp.id = allComandsList[word].id;
+        }
 
         sp.className=  "sfnav_child";
         sp.innerHTML = word;
-        sp.onmouseover = mouseHandler;
-        sp.onmouseout = mouseHandlerOut;
+        sp.onmouseover = function(){};
+        sp.onmouseout = function() {};
         sp.onclick = mouseClick;
+
         if(sp.id && sp.length > 0){
-    	       sp.onclick = mouseClickLoginAs;
+            sp.onclick = mouseClickLoginAs;
         }
-    		outp.appendChild(sp);
+
+        resultsElement.appendChild(sp);
     }
 
     function addSuccess(text)
     {
-        clearOutput();
+        clearResults();
         var err = document.createElement("div");
         err.className = 'sfnav_child sfnav-success-wrapper';
         var errorText = '';
         err.appendChild(document.createTextNode('Success! '));
         err.appendChild(document.createElement('br'));
         err.appendChild(document.createTextNode('Field ' + text.id + ' created!'));
-        outp.appendChild(err);
+        resultsElement.appendChild(err);
 
-        setVisible("visible");
+        showResults();
     }
 
     function addError(text)
     {
-        clearOutput();
+        clearResults();
         var err = document.createElement("div");
         err.className = 'sfnav_child sfnav-error-wrapper';
 
@@ -394,27 +345,20 @@ var sfnav = (function() {
             err.appendChild(document.createElement('br'));
         }
 
-        /*
-        var ta = document.createElement('textarea');
-        ta.className = 'sfnav-error-textarea';
-        ta.value = JSON.stringify(text, null, 4);
+        resultsElement.appendChild(err);
 
-        err.appendChild(ta);
-        */
-        outp.appendChild(err);
-
-        setVisible("visible");
+        showResults();
     }
 
-    function clearOutput(){
-        if(typeof outp != 'undefined')
+    function clearResults(){
+        if(typeof resultsElement != 'undefined')
         {
-            while (outp.hasChildNodes()){
-                noten=outp.firstChild;
-                outp.removeChild(noten);
+            while (resultsElement.hasChildNodes()){
+                noten=resultsElement.firstChild;
+                resultsElement.removeChild(noten);
             }
         }
-        posi = -1;
+        hideResults();
     }
     function getWord(beginning, dict){
         beginning = beginning.trim().toLowerCase();
@@ -518,9 +462,6 @@ var sfnav = (function() {
                     length_diff += highlighted_key.length - length_before;
                 }
 
-                // console.log(highlighting);
-                // console.log(highlighted_key);
-
                 arrFound.push({
                     num: num,
                     key: highlighted_key,
@@ -531,7 +472,7 @@ var sfnav = (function() {
         arrFound.sort(function(a,b) {
             var diff = b.num - a.num;
             if(diff === 0){
-                if(b.key < a.key) {
+                if(b.key > a.key) {
                     diff = b.key == a.key? 0 : -1;
                 } else {
                     diff = 1;
@@ -545,37 +486,16 @@ var sfnav = (function() {
 
         return words;
     }
-    function setColor (_posi, _color, _forg){
-        outp.childNodes[_posi].style.background = _color;
-        outp.childNodes[_posi].style.color = _forg;
-    }
 
-    function invokeCommand(cmd, newtab, event) {
-        if(event != 'click' && typeof cmds[cmd] != 'undefined' && (cmds[cmd].url != null || cmds[cmd].url == ''))
-        {
-            if(newtab)
-            {
-                var w = window.open(cmds[cmd].url, '_newtab');
-                w.blur();
-                window.focus();
-            } else {
-                window.location.href = cmds[cmd].url;
-            }
-
-            return true;
-        }
+    function invokeCommand(cmd, newtab) {
         if(cmd.toLowerCase() == 'refresh metadata')
         {
-            showLoadingIndicator();
             getAllObjectMetadata();
-            setTimeout(function() {
-                hideLoadingIndicator();
-            }, 30000)
             return true;
         }
         if(cmd.toLowerCase() == 'setup')
         {
-            window.location.href = serverInstance + '/ui/setup/Setup';
+            window.location.href = SERVER_INSTANCE + '/ui/setup/Setup';
             return true;
         }
         if(cmd.toLowerCase().substring(0,3) == 'cf ')
@@ -588,6 +508,20 @@ var sfnav = (function() {
             loginAs(cmd);
             return true;
         }
+
+        if(typeof allComandsList[cmd] != 'undefined' && (allComandsList[cmd].url != null || allComandsList[cmd].url == ''))
+        {
+            if (newtab) {
+                var w = window.open(allComandsList[cmd].url, '_newtab');
+                w.blur();
+                window.focus();
+            } else {
+                window.location.href = allComandsList[cmd].url;
+            }
+
+            return true;
+        }
+
 
         return false;
     }
@@ -628,11 +562,11 @@ var sfnav = (function() {
 
 
 
-            ftClient.queryByName('CustomField', fieldName, sObjectName, function(success) {
+            forceToolingClient.queryByName('CustomField', fieldName, sObjectName, function(success) {
                 addSuccess(success);
                 fieldMeta = new  forceTooling.CustomFields.CustomField(arrSplit[1], arrSplit[2], dataType, null, arrSplit[4], parseInt(leftDecimals),parseInt(rightDecimals),null);
 
-                ftClient.update('CustomField', fieldMeta,
+                forceToolingClient.update('CustomField', fieldMeta,
                     function(success) {
                         console.log(success);
                         addSuccess(success);
@@ -773,9 +707,9 @@ var sfnav = (function() {
 
             }
 
-            ftClient.setSessionToken(getCookie('sid'), SFAPI_VERSION, serverInstance + '');
+            forceToolingClient.setSessionToken(getCookie('sid'), SFAPI_VERSION, SERVER_INSTANCE + '');
             showLoadingIndicator();
-            ftClient.create('CustomField', fieldMeta,
+            forceToolingClient.create('CustomField', fieldMeta,
                 function(success) {
                     console.log(success);
                    hideLoadingIndicator();
@@ -790,63 +724,126 @@ var sfnav = (function() {
 
     }
 
-	function loginAs(cmd) {
-		var arrSplit = cmd.split(' ');
-		var searchValue = arrSplit[2];
-		if(arrSplit[3] !== undefined)
-			searchValue += '+' + arrSplit[3];
+    function loginAs(cmd) {
+        var arrSplit = cmd.split(' ');
+        var searchValue = undefined;
 
-		var query = 'SELECT+Id,+Name,+Username+FROM+User+WHERE+Name+LIKE+\'%25' + searchValue + '%25\'+OR+Username+LIKE+\'%25' + searchValue + '%25\'';
-		console.log(query);
+        // Get FirstName or Username
+        if (arrSplit[2] !== undefined) {
+            searchValue = arrSplit[2];
+        }
 
-		ftClient.query(query,
-			function(success) {
-				console.log(success);
-				var numberOfUserRecords = success.records.length;
-				if(numberOfUserRecords < 1){
-					addError([{"message":"No user for your search exists."}]);
-				} else if(numberOfUserRecords > 1){
-					loginAsShowOptions(success.records);
-				} else {
-					var userId = success.records[0].Id;
-					loginAsPerform(userId);
-				}
-			},
-			function(error)
-			{
-				console.log(error);
-				addError(error.responseJSON);
-			}
-		);
-	}
+        // Get Surname
+        if (arrSplit[3] !== undefined) {
+            searchValue += ' ' + arrSplit[3];
+        }
+
+        if(searchValue !== undefined) {
+            query = encodeURI("SELECT Id, Name, Username FROM User WHERE Name LIKE '%" + searchValue + "%' OR Username LIKE '%" + searchValue + "%' ORDER BY Name");
+            showLoadingIndicator();
+            forceToolingClient.query(query,
+                function(success) {
+                    if(success.records.length < 1){
+                        addError([{"message":"No user for your search exists."}]);
+                    } else if(success.records.length > 1) {
+                        addError([{"message":"Select stricter parameters"}]);
+                    } else {
+                        loginAsPerform(success.records[0].Id);
+                    }
+                    hideLoadingIndicator();
+                },
+                function(error) {
+                    addError(error.responseJSON);
+                    hideLoadingIndicator();
+                }
+            );
+        }
+    }
+
+    var timeOfLoginAsShowResults;
+    function loginAsShowResults(cmd) {
+        timeOfLoginAsShowResults = new Date();
+        var timeOfThis = timeOfLoginAsShowResults;
+
+        var arrSplit = cmd.split(' ');
+        var searchValue = undefined;
+
+        // Get FirstName or Username
+        if (arrSplit[2] !== undefined) {
+            searchValue = arrSplit[2];
+        }
+
+        // Get Surname
+        if (arrSplit[3] !== undefined) {
+            searchValue += ' ' + arrSplit[3];
+        }
+
+
+        var query;
+        if (undefined !== searchValue) {
+            query = encodeURI("SELECT Id, Name, Username FROM User WHERE Name LIKE '%" + searchValue + "%' OR Username LIKE '%" + searchValue + "%' ORDER BY Name");
+        } else {
+            query = encodeURI("SELECT Id, Name, Username FROM User ORDER BY Name");
+        }
+
+        showLoadingIndicator();
+        forceToolingClient.query(query,
+            function(success) {
+                if(timeOfThis === timeOfLoginAsShowResults) {
+                    var numberOfUserRecords = success.records.length;
+                    if (numberOfUserRecords > 0) {
+                        loginAsShowOptions(success.records);
+                    }
+                    hideLoadingIndicator();
+                }
+            },
+            function(error) {
+                addError(error.responseJSON);
+                hideLoadingIndicator();
+            }
+        );
+
+    }
 
 	function loginAsShowOptions(records){
 		for(var i = 0; i < records.length; ++i){
-			var cmd = 'Login As ' + records[i].Name;
-			cmds[cmd] = {key: cmd, id: records[i].Id};
-			addWord(cmd);
+			var cmd = 'Login As ' + records[i].Username;
+            var hip = $('<span />').addClass('sfnav_hip').attr('title', records[i].Name);
+            cmd += hip.prop('outerHTML');
+			//allComandsList[cmd] = {key: cmd, id: records[i].Id};
+			addResultItem(cmd);
 		}
-		setVisible('visible');
+		showResults();
 	}
 
 	function loginAsPerform(userId) {
-		xmlhttp = new XMLHttpRequest();
-		xmlhttp.onreadystatechange = function() {
-			if (xmlhttp.readyState == XMLHttpRequest.DONE ) {
-			   document.write(xmlhttp.responseText );
-			   document.close();
-			   setTimeout(function() {
-					document.getElementsByName("login")[0].click();
-			   }, 1000);
-			}
-		}
-		xmlhttp.open("GET", userDetailPage(userId), true);
-		xmlhttp.send();
+        showLoadingIndicator();
+        $.ajax( userDetailPage(userId) )
+            .done(function(response) {
+                var linkFound = false;
+
+                var onclick = $(response).find('input[name="login"]').first().attr('onclick');
+                if (undefined !== onclick) {
+                    var matсhes = onclick.match(/^navigateToUrl\('([^']*)'/);
+                    if (undefined !== matсhes[1]) {
+                        linkFound = true;
+                        var url = matсhes[1];
+                        window.location.href = url;
+                    }
+                }
+
+                if(!linkFound){
+                    addError([{"message":"Error: Perhaps you can not log on behalf of that user"}]);
+                }
+            })
+            .fail(function() {
+                addError([{"message":"Error during login"}]);
+                hideLoadingIndicator();
+            });
 	}
 
 	function userDetailPage(userId) {
-		var loginLocation = window.location.protocol + '//' + window.location.host + '/' + userId + '?noredirect=1';
-		console.log(loginLocation);
+		var loginLocation = window.location.protocol + '//' + window.location.host + '/' + encodeURI(userId) + '?noredirect=1';
 		return loginLocation;
 	}
 
@@ -854,9 +851,10 @@ var sfnav = (function() {
         if(_data.length == 0) return;
         var metadata = JSON.parse(_data);
 
+        console.log(metadata);
+
         var mRecord = {};
         var act = {};
-        metaData = {};
 
 
         for(var i=0;i<metadata.sobjects.length;i++)
@@ -868,27 +866,27 @@ var sfnav = (function() {
                 mRecord.labelPlural = metadata.sobjects[i].labelPlural;
                 mRecord.keyPrefix = metadata.sobjects[i].keyPrefix;
                 mRecord.urls = metadata.sobjects[i].urls;
-                metaData[metadata.sobjects[i].keyPrefix] = mRecord;
 
                 act = {};
                 act.key = metadata.sobjects[i].name;
                 act.keyPrefix = metadata.sobjects[i].keyPrefix;
-                act.url = serverInstance + '/' + metadata.sobjects[i].keyPrefix;
+                act.url = SERVER_INSTANCE + '/' + metadata.sobjects[i].keyPrefix;
 
-                cmds['List > ' + mRecord.labelPlural] = act;
+                allComandsList['List > ' + mRecord.labelPlural] = act;
                 act = {};
                 act.key = metadata.sobjects[i].name;
                 act.keyPrefix = metadata.sobjects[i].keyPrefix;
-                act.url = serverInstance + '/' + metadata.sobjects[i].keyPrefix;
+                act.url = SERVER_INSTANCE + '/' + metadata.sobjects[i].keyPrefix;
                 act.url += '/e';
-                cmds['New > ' + mRecord.label] = act;
+                allComandsList['New > ' + mRecord.label] = act;
 
 
             }
         }
 
-        store('Store Commands', cmds);
-        // store('Store Metadata', metaData)
+        console.log(allComandsList);
+
+        store('Store Commands', allComandsList);
     }
 
     function store(action, payload) {
@@ -901,12 +899,6 @@ var sfnav = (function() {
         chrome.extension.sendMessage(req, function(response) {
 
         });
-
-        // var storagePayload = {};
-        // storagePayload[action] = payload;
-        // chrome.storage.local.set(storagePayload, function() {
-        //     console.log('stored');
-        // });
     }
 
     function getAllObjectMetadata() {
@@ -914,17 +906,19 @@ var sfnav = (function() {
         // session ID is different and useless in VF
         if(location.origin.indexOf("visual.force") !== -1) return;
 
+        showLoadingIndicator();
         sid = "Bearer " + getCookie('sid');
         var theurl = getServerInstance() + '/services/data/' + SFAPI_VERSION + '/sobjects/';
 
-        cmds['Refresh Metadata'] = {};
-        cmds['Setup'] = {};
+        allComandsList['Refresh Metadata'] = {};
+        allComandsList['Setup'] = {};
+
         var req = new XMLHttpRequest();
         req.open("GET", theurl, true);
         req.setRequestHeader("Authorization", sid);
         req.onload = function(response) {
-         getMetadata(response.target.responseText);
-
+            getMetadata(response.target.responseText);
+            hideLoadingIndicator();
         }
         req.send();
 
@@ -966,47 +960,47 @@ var sfnav = (function() {
 
             strName = strNameMain + item.innerText;
 
-            if(cmds[strName] == null) cmds[strName] = {url: item.href, key: strName};
+            if(allComandsList[strName] == null) allComandsList[strName] = {url: item.href, key: strName};
 
         });
-        store('Store Commands', cmds);
+        store('Store Commands', allComandsList);
     }
 
     function getSetupTree() {
 
-        var theurl = serverInstance + '/ui/setup/Setup'
+        var theurl = SERVER_INSTANCE + '/ui/setup/Setup';
         var req = new XMLHttpRequest();
         req.onload = function() {
-         parseSetupTree(this.response);
-         hideLoadingIndicator();
-     }
-     req.open("GET", theurl);
-     req.responseType = 'document';
+            parseSetupTree(this.response);
+            hideLoadingIndicator();
+        }
+        req.open("GET", theurl);
+        req.responseType = 'document';
 
-     req.send();
+        req.send();
     }
 
     function getCustomObjects()
     {
-        var theurl = serverInstance + '/p/setup/custent/CustomObjectsPage';
+        var theurl = SERVER_INSTANCE + '/p/setup/custent/CustomObjectsPage';
         var req = new XMLHttpRequest();
         req.onload = function() {
             parseCustomObjectTree(this.response);
         }
-     req.open("GET", theurl);
-     req.responseType = 'document';
+        req.open("GET", theurl);
+        req.responseType = 'document';
 
-     req.send();
+        req.send();
     }
 
     function parseCustomObjectTree(html)
     {
 
         $(html).find('th a').each(function(el) {
-            cmds['Setup > Custom Object > ' + this.text] = {url: this.href, key: this.text};
+            allComandsList['Setup > Custom Object > ' + this.text] = {url: this.href, key: this.text};
         });
 
-        store('Store Commands', cmds);
+        store('Store Commands', allComandsList);
     }
 
     function getCookie(c_name)
@@ -1077,55 +1071,38 @@ var sfnav = (function() {
     }
 
     function initShortcuts() {
-
-      chrome.extension.sendMessage({'action':'Get Settings'},
-          function(response) {
-
-            shortcut = response['shortcut'];
-            bindShortcut(shortcut);
-        }
+        chrome.extension.sendMessage(
+            {'action':'Get Settings'},
+            function(response) {
+                var shortcut = response['shortcut'];
+                bindShortcut(shortcut);
+            }
         );
-
-        // chrome.storage.local.get('settings', function(results) {
-        //     if(typeof results.settings.shortcut === 'undefined')
-        //     {
-        //         shortcut = 'shift+space';
-        //         bindShortcut(shortcut);
-        //     }
-        //     else
-        //     {
-        //         bindShortcut(results.settings.shortcut);
-        //     }
-        // });
     }
 
     function kbdCommand(e, key) {
-        var position = posi;
-        var origText = '', newText = '';
+        var position = selectedItemIndex;
         if(position <0) position = 0;
 
-        origText = document.getElementById("sfnav_quickSearch").value;
-        if(typeof outp.childNodes[position] != 'undefined')
-        {
-            newText = getContent(outp.childNodes[position]);
-
+        var newText = document.getElementById("sfnav_quickSearch").value;
+        if ('undefined' !== typeof resultsElement.childNodes[position]) {
+            newText = getContent(resultsElement.childNodes[position]);
         }
 
-        var newtab = newTabKeys.indexOf(key) >= 0 ? true : false;
-        if(!newtab){
-            clearOutput();
-            setVisible("hidden");
+        var newtab = (NEW_TAB_KEYS.indexOf(key) >= 0) ? true : false;
+        if (!newtab) {
+            clearResults();
+            hideResults();
         }
 
-        if(!invokeCommand(newText, newtab))
-            invokeCommand(origText, newtab);
+        invokeCommand(newText, newtab)
     }
 
     function bindShortcut(shortcut)
     {
 
         Mousetrap.bindGlobal(shortcut, function(e) {
-            setVisibleSearch("visible");
+            showAll();
             return false;
         });
 
@@ -1135,129 +1112,121 @@ var sfnav = (function() {
 
         Mousetrap.wrap(document.getElementById('sfnav_quickSearch')).bind('enter', kbdCommand);
 
-        for (var i = 0; i < newTabKeys.length; i++) {
-            Mousetrap.wrap(document.getElementById('sfnav_quickSearch')).bind(newTabKeys[i], kbdCommand);
+        for (var i = 0; i < NEW_TAB_KEYS.length; i++) {
+            Mousetrap.wrap(document.getElementById('sfnav_quickSearch')).bind(NEW_TAB_KEYS[i], kbdCommand);
         };
 
         Mousetrap.wrap(document.getElementById('sfnav_quickSearch')).bind('down', function(e) {
-            var firstChild;
-            lookAt();
-
-            if(outp.childNodes[posi] != null)
-                firstChild = getContent(outp.childNodes[posi]);
-            else
-                firstChild = null;
-
-            var textfield = document.getElementById("sfnav_quickSearch");
-
-            if (words.length > 0 && posi < words.length-1)
-            {
-                posi++;
-
-                if(posi == 0) posi = 1;
-
-                if (outp.childNodes[posi] != null) {
-                    outp.childNodes[posi].scrollIntoViewIfNeeded(false);
-                    firstChild = getContent(outp.childNodes[posi]);
-                } else {
-                    firstChild = null;
-                }
-
-                if (posi >=1)
-                    outp.childNodes[posi-1].classList.remove('sfnav_selected');
-                else
-                    input = textfield.value;
-
-                outp.childNodes[posi].classList.add('sfnav_selected');
-                textfield.value = firstChild;
-
-                if(textfield.value.indexOf('[') != -1 && textfield.value.indexOf(']') != -1)
-                {
-                    textfield.setSelectionRange(textfield.value.indexOf('['), textfield.value.length);
-                    textfield.focus();
-                    return false;
-                }
-            }
-
+            movingTo(selectedItemIndex+1);
+            return false;
         });
 
-    Mousetrap.wrap(document.getElementById('sfnav_quickSearch')).bind('up', function(e) {
-        var firstChild;
+        Mousetrap.wrap(document.getElementById('sfnav_quickSearch')).bind('up', function(e) {
+            movingTo(selectedItemIndex-1);
+            return false;
+        });
 
-        if(outp.childNodes[posi] != null)
-            firstChild = getContent(outp.childNodes[posi]);
-        else
-            firstChild = null;
+        Mousetrap.wrap(document.getElementById('sfnav_quickSearch')).bind('backspace', function(e) {
+            movingTo(-1);
+        });
+
+        Mousetrap.wrap(document.getElementById('sfnav_quickSearch')).bind('pageup', function(e) {
+            var newIndex = selectedItemIndex-10;
+            newIndex = (newIndex >= 0) ? newIndex : 0;
+            movingTo(newIndex);
+            return false;
+        });
+
+        Mousetrap.wrap(document.getElementById('sfnav_quickSearch')).bind('pagedown', function(e) {
+            movingTo(selectedItemIndex+10);
+            return false;
+        });
+
+        document.getElementById('sfnav_quickSearch').onkeyup = function() {
+            lookAt();
+            return true;
+        }
+    }
+
+    var textInSearchInput = '';
+    function movingTo(to){
+        var numberOfResults = $(resultsElement).children().length;
 
         var textfield = document.getElementById("sfnav_quickSearch");
 
-        if (words.length > 0 && posi >= 0){
-            posi--;
+        var selectedItemIndex_prev = selectedItemIndex;
 
-            if(outp.childNodes[posi] != null) {
-                outp.childNodes[posi].scrollIntoViewIfNeeded(false);
-                firstChild = getContent(outp.childNodes[posi]);
-            } else {
-                firstChild = null;
-            }
+        to = (to < numberOfResults) ? to : numberOfResults-1;
+        to = (to >= -1)             ? to : -1;
 
-            if (posi >=0){
-                outp.childNodes[posi+1].classList.remove('sfnav_selected');
-                outp.childNodes[posi].classList.add('sfnav_selected');
-                textfield.value = firstChild;
-            }
-            else{
-                outp.childNodes[posi+1].classList.remove('sfnav_selected');
-                textfield.value = input;
-
-            }
-
-            if(textfield.value.indexOf('[') != -1 && textfield.value.indexOf(']') != -1)
-            {
-                textfield.setSelectionRange(textfield.value.indexOf('['), textfield.value.length);
-                textfield.focus();
-                return false;
-            }
-
-
+        if (-1 === selectedItemIndex_prev && 0 === to) {
+            // From input to result list
+            textInSearchInput = textfield.value;
         }
 
-    });
+        if (0 === selectedItemIndex_prev && -1 === to) {
+            // From list to input
+            textfield.value = textInSearchInput;
+        }
 
+        // if (0 === selectedItemIndex_prev && -1 < to) {
+        //     to = -1;
+        // }
 
+        selectedItemIndex = to;
 
-    Mousetrap.wrap(document.getElementById('sfnav_quickSearch')).bind('backspace', function(e) {
-        posi = -1;
-        oldins=-1;
-    });
+        if (-1 === selectedItemIndex) {
+            $('#sfnav_search_box').find('.sfnav_input-line').removeClass('unfocused');
+        } else {
+            $('#sfnav_search_box').find('.sfnav_input-line').addClass('unfocused');
+        }
 
-    document.getElementById('sfnav_quickSearch').onkeyup = function() {
+        if (undefined !== resultsElement.childNodes[selectedItemIndex_prev]) {
+            resultsElement.childNodes[selectedItemIndex_prev].classList.remove('sfnav_selected');
+        }
 
-        lookAt();
-        return true;
-    }
+        if (undefined !== resultsElement.childNodes[0]) {
+            if (-1 === selectedItemIndex) {
+                resultsElement.childNodes[0].classList.add('sfnav_selected');
+                resultsElement.childNodes[0].classList.add('sfnav_preselected');
+            } else {
+                resultsElement.childNodes[0].classList.remove('sfnav_selected');
+                resultsElement.childNodes[0].classList.remove('sfnav_preselected');
+            }
+        }
 
+        if (undefined !== resultsElement.childNodes[selectedItemIndex]) {
+            resultsElement.childNodes[selectedItemIndex].classList.add('sfnav_selected');
+            resultsElement.childNodes[selectedItemIndex].scrollIntoViewIfNeeded(false);
+
+            textfield.value = getContent(resultsElement.childNodes[selectedItemIndex]);
+
+            textfield.setSelectionRange(textfield.value.length, textfield.value.length);
+            if (textfield.value.indexOf('[') !== -1 && textfield.value.indexOf(']') !== -1) {
+                textfield.setSelectionRange(textfield.value.indexOf('['), textfield.value.indexOf(']')+1);
+            }
+        }
     }
 
     function showLoadingIndicator()
     {
-        document.getElementById('sfnav_loader').style.visibility = 'visible';
+        $('#sfnav_search_box').find('.loading').css('visibility','visible');
     }
     function hideLoadingIndicator()
     {
-        document.getElementById('sfnav_loader').style.visibility = 'hidden';
+        $('#sfnav_search_box').find('.loading').css('visibility','hidden');
     }
     function getCustomObjectsDef()
     {
 
-        ftClient.query('Select+Id,+DeveloperName,+NamespacePrefix+FROM+CustomObject',
+        forceToolingClient.query('Select+Id,+DeveloperName,+NamespacePrefix+FROM+CustomObject',
             function(success)
             {
                 for(var i=0;i<success.records.length;i++)
                 {
                     customObjects[success.records[i].DeveloperName.toLowerCase()] = {Id: success.records[i].Id};
                     var apiName = (success.records[i].NamespacePrefix == null ? '' : success.records[i].NamespacePrefix + '__') + success.records[i].DeveloperName + '__c';
-                    cmds['Setup > Custom Object > ' + apiName] = {url: '/' + success.records[i].Id, key: apiName};
+                    allComandsList['Setup > Custom Object > ' + apiName] = {url: '/' + success.records[i].Id, key: apiName};
                 }
             },
             function(error)
@@ -1268,14 +1237,14 @@ var sfnav = (function() {
     }
     function init()
     {
-        ftClient = new forceTooling.Client();
-        ftClient.setSessionToken(getCookie('sid'), SFAPI_VERSION, serverInstance + '');
+        forceToolingClient = new forceTooling.Client();
+        forceToolingClient.setSessionToken(getCookie('sid'), SFAPI_VERSION, SERVER_INSTANCE + '');
 
         var div = document.createElement('div');
         div.setAttribute('id', 'sfnav_search_box');
         var loaderURL = chrome.extension.getURL("images/ajax-loader.gif");
         var logoURL = chrome.extension.getURL("images/128.png");
-        div.innerHTML = '<div class="sfnav_wrapper"><input type="text" id="sfnav_quickSearch" autocomplete="off" placeholder="Search..."/><img id="sfnav_loader" src= "'+ loaderURL +'"/><img id="sfnav_logo" src= "'+ logoURL +'"/></div><div class="sfnav_shadow" id="sfnav_shadow"/><div class="sfnav_output" id="sfnav_output"/>';
+        div.innerHTML = '<div class="sfnav_input-line"><input type="text" id="sfnav_quickSearch" autocomplete="off" placeholder="Search..."/><img class="loading" src= "'+ loaderURL +'"/><img id="sfnav_logo" src= "'+ logoURL +'"/></div><div class="sfnav_results" id="sfnav_results"></div>';
         document.body.appendChild(div);
 
         var background_div = document.createElement('div');
@@ -1283,45 +1252,27 @@ var sfnav = (function() {
         background_div.addEventListener('click', hideAll);
         document.body.appendChild(background_div);
 
-        outp = document.getElementById("sfnav_output");
+        resultsElement = document.getElementById("sfnav_results");
         hideLoadingIndicator();
         initShortcuts();
 
-        omnomnom = getCookie('sid');
+        var omnomnom = getCookie('sid');
 
-        clientId = omnomnom.split('!')[0];
+        var clientId = omnomnom.split('!')[0];
 
         hash = clientId + '!' + omnomnom.substring(omnomnom.length - 10, omnomnom.length);
-        // chrome.storage.local.get(['Commands','Metadata'], function(results) {
-        //     console.log(results);
-        // });
 
 
         chrome.extension.sendMessage({action:'Get Commands', 'key': hash},
-          function(response) {
-            cmds = response;
+        function(response) {
+            allComandsList = {};
 
-            if(cmds == null || cmds.length == 0)
-            {
-                cmds = {};
-                metaData = {};
-
+            if(response !== null && response.length !== 0) {
+                allComandsList = response;
+            } else {
                 getAllObjectMetadata();
-
-            }
-            else
-            {
-
             }
         });
-
-        // chrome.extension.sendMessage({action:'Get Metadata', 'key': hash},
-        //   function(response) {
-        //     metaData = response;
-        // });
-
-
-
 
     }
 
@@ -1356,7 +1307,7 @@ var sfnav = (function() {
         };
     }
 
-    if(serverInstance == null || getCookie('sid') == null || getCookie('sid').split('!').length != 2) return;
+    if(SERVER_INSTANCE == null || getCookie('sid') == null || getCookie('sid').split('!').length != 2) return;
     else init();
 
 })();
