@@ -18,7 +18,13 @@ chrome.extension.onMessage.addListener(
   function(request, sender, sendResponse) {
 
     var orgKey = request.key != null ? request.key.split('!')[0] : null;
-
+    if(request.action == 'Open in a new tab')
+    {
+      chrome.tabs.getSelected(null, function (tab) {
+          var cur_index = tab.index;
+          chrome.tabs.create({url: request.payload, active: false, index: cur_index + 1});
+      });
+    }
     if(request.action == 'Store Commands')
     {
       Object.keys(commands).forEach(function(key) {

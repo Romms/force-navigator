@@ -44,10 +44,10 @@ var sfnav = (function() {
     var sid;
     var forceToolingClient;
     var customObjects = {};
-    var words = [];
+    var ctrlIsPressed = false;
 
 
-/**
+    /**
  * adds a bindGlobal method to Mousetrap that allows you to
  * bind specific keyboard shortcuts that will still work
  * inside a text input field
@@ -84,18 +84,19 @@ var sfnav = (function() {
     }) (Mousetrap);
 
     var mouseClick=
-    function(){
-        console.log('AAAAAAAAAAAA');
-        console.log(getContent(this));
-
+    function(e){
         oldins = getContent(this);
-        movingTo(-1);
-        hideResults();
-        hideAll();
 
-        invokeCommand(getContent(this), false, 'click');
+        if (!ctrlIsPressed) {
+            movingTo(-1);
+            hideResults();
+            hideAll();
+        }
 
-        return true;
+        invokeCommand(getContent(this), ctrlIsPressed, 'click');
+
+        e.preventDefault();
+        return false;
     };
 
 	var mouseClickLoginAs=
@@ -124,7 +125,6 @@ var sfnav = (function() {
     function search(ins)
     {
         clearResults();
-        console.log(ins);
         ins = ins.trim();
 
         if (0 === ins.length) {
@@ -136,7 +136,7 @@ var sfnav = (function() {
             loginAsShowResults(ins);
         }
 
-        if(ins.toLowerCase().substring(0,3) == 'cf ' && ins.split(' ').length < 4) {
+        if(ins.toLowerCase().substring(0,2) == 'cf' && ins.split(' ').length < 4) {
             addResultItem('Usage: cf [Object API Name] [Field Name] [Data Type]');
         }
 
@@ -387,85 +387,85 @@ var sfnav = (function() {
         {
             var key_lowercase = key.toLowerCase();
             var highlighting = [];
-
-            var match = false;
             var num = 0;
+            var foundWhole = false;
+            var foundAllSplited = false;
 
-            var indexFound = key_lowercase.indexOf(beginning);
-            if(indexFound != -1)
-            {
-                match = true;
-                num = 100;
+            var indexFound = -1;
+            while (-1 != (indexFound = key_lowercase.indexOf(beginning, indexFound+1))) {
+                foundWhole = true;
+                num += 100;
 
                 highlighting.push({
                     from: indexFound,
-                    to: indexFound + beginning.length,
+                    to: indexFound + beginning.length
                 });
             }
-            else
-            {
-                num = 0;
-                for(var i = 0; i < tmpSplit.length; i++)
-                {
-                    indexFound = key_lowercase.indexOf(tmpSplit[i]);
-                    if (indexFound != -1) {
-                        match = true;
-                        num += 1;
 
-                        highlighting.push({
-                            from: indexFound,
-                            to: indexFound + tmpSplit[i].length,
-                        });
-                    } else {
-                        match = false;
-                        break;
-                    }
+            foundAllSplited = true;
+            for(var i = 0; i < tmpSplit.length; i++) {
+                indexFound = -1;
+                var found = false;
+                while (-1 != (indexFound = key_lowercase.indexOf(tmpSplit[i], indexFound+1))) {
+                    found = true;
+                    num += 1;
+
+                    highlighting.push({
+                        from: indexFound,
+                        to: indexFound + tmpSplit[i].length
+                    });
+                }
+                foundAllSplited = foundAllSplited && found;
+                if (!foundAllSplited) {
+                    break;
                 }
             }
 
-            if(match) {
-                highlighting.sort(function (a,b) {
-                    return a.from - b.from;
-                });
+            if (foundWhole || foundAllSplited) {
+                if (highlighting.length > 0) {
+                    highlighting.sort(function (a, b) {
+                        return a.from - b.from;
+                    });
 
-                for (var i = 0; i < highlighting.length - 1; i++) {
-                    if (highlighting[i].to >= highlighting[i+1].to) { // Next are included
-                        highlighting.splice(i+1, 1);
-                        i--;
-                    } else {
-                        if (highlighting[i].to >= highlighting[i + 1].from) { // Join
-                            highlighting[i].to = highlighting[i + 1].to;
-
+                    for (var i = 0; i < highlighting.length - 1; i++) {
+                        if (highlighting[i].to >= highlighting[i + 1].to) { // Next are included
                             highlighting.splice(i + 1, 1);
                             i--;
+                        } else {
+                            if (highlighting[i].to >= highlighting[i + 1].from) { // Join
+                                highlighting[i].to = highlighting[i + 1].to;
+
+                                highlighting.splice(i + 1, 1);
+                                i--;
+                            }
                         }
                     }
+
+                    var highlighted_key = key;
+                    var length_diff = 0;
+
+                    for (var i = 0; i < highlighting.length; i++) {
+                        var length_before = highlighted_key.length;
+
+                        var from = length_diff + highlighting[i].from;
+                        var to = length_diff + highlighting[i].to;
+
+                        var begin = highlighted_key.substring(0, from);
+                        var middle = highlighted_key.substring(from, to);
+                        var end = highlighted_key.substring(to);
+
+                        middle = '<span class="highlighted">' + middle + '</span>';
+
+                        highlighted_key = begin.concat(middle, end);
+
+                        length_diff += highlighted_key.length - length_before;
+                    }
+
+                    arrFound.push({
+                        num: num,
+                        key: highlighted_key
+                    });
                 }
-
-                var highlighted_key = key;
-                var length_diff = 0;
-
-                for (var i = 0; i < highlighting.length; i++) {
-                    var length_before = highlighted_key.length;
-
-                    var from = length_diff + highlighting[i].from;
-                    var to   = length_diff + highlighting[i].to;
-
-                    var begin = highlighted_key.substring(0, from);
-                    var middle = highlighted_key.substring(from, to);
-                    var end = highlighted_key.substring(to);
-
-                    middle = '<span class="highlighted">' + middle + '</span>';
-
-                    highlighted_key = begin.concat(middle, end);
-
-                    length_diff += highlighted_key.length - length_before;
-                }
-
-                arrFound.push({
-                    num: num,
-                    key: highlighted_key,
-                });
             }
 
         }
@@ -512,9 +512,8 @@ var sfnav = (function() {
         if(typeof allComandsList[cmd] != 'undefined' && (allComandsList[cmd].url != null || allComandsList[cmd].url == ''))
         {
             if (newtab) {
-                var w = window.open(allComandsList[cmd].url, '_newtab');
-                w.blur();
-                window.focus();
+                store('Open in a new tab', allComandsList[cmd].url);
+                chrome.tabs.create({ url: allComandsList[cmd].url });
             } else {
                 window.location.href = allComandsList[cmd].url;
             }
@@ -851,8 +850,6 @@ var sfnav = (function() {
         if(_data.length == 0) return;
         var metadata = JSON.parse(_data);
 
-        console.log(metadata);
-
         var mRecord = {};
         var act = {};
 
@@ -883,8 +880,6 @@ var sfnav = (function() {
 
             }
         }
-
-        console.log(allComandsList);
 
         store('Store Commands', allComandsList);
     }
@@ -1237,6 +1232,16 @@ var sfnav = (function() {
     }
     function init()
     {
+        $(document).keydown(function(event) {
+            if (event.which == "17") {
+                ctrlIsPressed = true;
+            }
+        });
+
+        $(document).keyup(function(){
+            ctrlIsPressed = false;
+        });
+
         forceToolingClient = new forceTooling.Client();
         forceToolingClient.setSessionToken(getCookie('sid'), SFAPI_VERSION, SERVER_INSTANCE + '');
 
